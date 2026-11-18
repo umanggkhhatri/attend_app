@@ -12,9 +12,16 @@
     "android": {
       "package": "in.oneattend.demo",
       "versionCode": 1,
-      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
       "blockedPermissions": ["android.permission.RECORD_AUDIO"],
-      "adaptiveIcon": { "backgroundColor": "#191c22", "foregroundImage": "./assets/adaptive.png" }
+      "adaptiveIcon": {
+        "backgroundColor": "#191c22",
+        "foregroundImage": "./assets/adaptive.png"
+      }
     },
     "plugins": [
       [
@@ -33,11 +40,25 @@
       ],
       [
         "expo-splash-screen",
-        { "backgroundColor": "#191c22", "image": "./assets/icon.png", "imageWidth": 96 }
+        {
+          "backgroundColor": "#191c22",
+          "image": "./assets/icon.png",
+          "imageWidth": 96
+        }
       ],
       "expo-font",
       "expo-system-ui"
     ],
-    "web": { "bundler": "metro", "name": "OneAttend Student Preview", "themeColor": "#191c22" }
+    "web": {
+      "bundler": "metro",
+      "name": "OneAttend Student Preview",
+      "themeColor": "#191c22"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f4349216-ff55-447d-88d5-0d88c65646cc"
+      }
+    },
+    "owner": "theumangkhatri"
   }
 }
