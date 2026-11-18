@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({testDir:'./tests/ui',timeout:30000,use:{headless:true,trace:'retain-on-failure',screenshot:'only-on-failure'},webServer:[{command:'npm run web',url:'http://localhost:5173',reuseExistingServer:true},{command:'npm run export:web -w @oneattend/mobile && npx serve apps/mobile/dist-web -l 4174 --no-clipboard',url:'http://localhost:4174',reuseExistingServer:true,timeout:120000}],projects:[{name:'chromium',use:{browserName:'chromium'}}]});

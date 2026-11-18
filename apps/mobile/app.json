@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "OneAttend", "slug": "oneattend", "version": "0.1.0", "scheme": "oneattend", "orientation": "portrait", "userInterfaceStyle": "dark",
+    "backgroundColor": "#191c22", "platforms": ["android", "web"],
+    "android": { "package": "in.oneattend.demo", "versionCode": 1, "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"], "blockedPermissions": ["android.permission.RECORD_AUDIO"], "adaptiveIcon": { "backgroundColor": "#191c22" } },
+    "plugins": [ ["expo-camera", { "cameraPermission": "OneAttend uses your camera to scan classroom attendance QR codes.", "recordAudioAndroid": false }], ["expo-location", { "locationWhenInUsePermission": "OneAttend checks your location only while verifying classroom attendance.", "isAndroidBackgroundLocationEnabled": false }], "expo-font", "expo-system-ui" ],
+    "web": { "bundler": "metro", "name": "OneAttend Student Preview", "themeColor": "#191c22" }
+  }
+}
