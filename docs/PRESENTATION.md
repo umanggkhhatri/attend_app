@@ -32,3 +32,16 @@ python scripts/presentation.py
 The capture script creates a demonstration attendance session only if none is already open for the course. It cancels only the session it created, preserving eligibility totals and existing user sessions. Do not use this script against a production project.
 
 The earlier submissions and guidelines informed the narrative. At generation time, the script reads `survey.xlsx` and the captured screenshots from the repository's parent folder. It checks evidence counts and all slide bounds, and creates layout previews with Pillow. These previews are not PowerPoint-rendered screenshots. Open the actual PPTX on the presentation computer to check application/font rendering and use the embedded presenter notes. No PDF is required or supplied.
+
+## Extra screenshots for the team
+
+`artifacts/team-screenshots/` contains 10 faculty/admin-style web screenshots and 22 student browser-preview screenshots. Original PNGs are grouped into `faculty-admin/` and `student/`, with captions in `README.md` and `manifest.json`. Two contact sheets make it easy to select images for slides.
+
+Share `artifacts/OneAttend_Team_Screenshots.zip` with the team. These artifacts remain ignored by Git; the reproducible capture scripts are committed.
+
+```sh
+node scripts/team-screenshots.mjs
+python scripts/package-screenshots.py
+```
+
+The faculty UI is not a separate production institute-admin role. Student screens are browser previews, not native Android device captures. Sample records, campus workflows, static QR expiry and scanner permission state are explicitly labelled. No personal request, approval, booking or correction was submitted while taking these screenshots. Only the screenshot-created attendance session was cancelled.
