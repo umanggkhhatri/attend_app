@@ -4,12 +4,18 @@ export default defineConfig({
   timeout: 30000,
   use: { headless: true, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   webServer: [
-    { command: 'npm run web', url: 'http://localhost:5173', reuseExistingServer: true },
+    {
+      command: 'npm run dev -w @oneattend/web -- --port 5178 --strictPort',
+      url: 'http://localhost:5178',
+      reuseExistingServer: false,
+      env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '', VITE_APK_URL: '' },
+    },
     {
       command:
-        'npm run export:web -w @oneattend/mobile && npx serve apps/mobile/dist-web -l 4174 --no-clipboard',
-      url: 'http://localhost:4174',
-      reuseExistingServer: true,
+        'npm exec -w @oneattend/mobile -- expo export --platform web --output-dir dist-test && npx serve apps/mobile/dist-test -l 4178 --no-clipboard',
+      url: 'http://localhost:4178',
+      reuseExistingServer: false,
+      env: { EXPO_NO_DOTENV: '1', EXPO_PUBLIC_SUPABASE_URL: '', EXPO_PUBLIC_SUPABASE_ANON_KEY: '' },
       timeout: 120000,
     },
   ],

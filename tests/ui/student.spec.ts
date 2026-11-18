@@ -3,7 +3,8 @@ test.use({ viewport: { width: 393, height: 852 } });
 test('student membership, course analytics and campus request demo', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('http://localhost:4174');
+  await page.goto('http://localhost:4178');
+  await expect(page.getByText('Sample preview', { exact: true })).toBeVisible();
   await expect(page.getByText('Good to see you,', { exact: false })).toBeVisible();
   await page.screenshot({ path: 'artifacts/student-home.png', fullPage: true });
   await page.getByRole('tab', { name: 'Attendance', exact: true }).click();

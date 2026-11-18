@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 test('faculty overview, filtering, reports and mobile viewport', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('http://localhost:5173');
+  await page.goto('http://localhost:5178');
+  await expect(page.getByText('Sample preview', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Every class, accounted for.' })).toBeVisible();
   await page.getByRole('button', { name: 'Student records' }).click();
   await page.getByPlaceholder('Search name or roll number').fill('2401AI01');
@@ -22,7 +23,8 @@ test('faculty overview, filtering, reports and mobile viewport', async ({ page }
   expect(errors).toEqual([]);
 });
 test('map selection opens a local session and closes it', async ({ page }) => {
-  await page.goto('http://localhost:5173');
+  await page.goto('http://localhost:5178');
+  await expect(page.getByText('Sample preview', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Start attendance', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Open attendance' })).toBeDisabled();
   await page.locator('.leaflet-container').click({ position: { x: 200, y: 140 } });
@@ -35,7 +37,7 @@ test('map selection opens a local session and closes it', async ({ page }) => {
   ).toBeVisible();
 });
 test('download page does not advertise an unpublished APK', async ({ page }) => {
-  await page.goto('http://localhost:5173/download');
+  await page.goto('http://localhost:5178/download');
   await expect(page.getByText('The APK is not published yet.', { exact: false })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Download Android APK' })).toHaveCount(0);
 });
