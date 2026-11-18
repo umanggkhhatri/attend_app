@@ -1,63 +1,1265 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowDownToLine, ArrowRight, ArrowUpRight, Bell, CalendarDays, Check, CheckCheck, ChevronDown, CircleHelp, ClipboardCheck, Clock3, Download, FileCheck2, LayoutDashboard, LocateFixed, MapPin, MoreHorizontal, Plus, QrCode, Search, ShieldCheck, Smartphone, Users, X, XCircle } from 'lucide-react';
+import {
+  Activity,
+  ArrowDownToLine,
+  ArrowRight,
+  ArrowUpRight,
+  Bell,
+  CalendarDays,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  CircleHelp,
+  ClipboardCheck,
+  Clock3,
+  Download,
+  FileCheck2,
+  LayoutDashboard,
+  LocateFixed,
+  MapPin,
+  MoreHorizontal,
+  Plus,
+  QrCode,
+  Search,
+  ShieldCheck,
+  Smartphone,
+  Users,
+  X,
+  XCircle,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { courses, students, history, teacherRows, exportCsv, createGateway, demoInstitution, schedule, type Snapshot, type Point, type Session } from '@oneattend/core';
+import {
+  courses,
+  students,
+  history,
+  teacherRows,
+  exportCsv,
+  createGateway,
+  demoInstitution,
+  schedule,
+  type Snapshot,
+  type Point,
+  type Session,
+} from '@oneattend/core';
 import MapPicker from './MapPicker';
-const gateway=createGateway(import.meta.env.VITE_SUPABASE_URL,import.meta.env.VITE_SUPABASE_ANON_KEY);
-const nav=[{id:'overview',name:'Overview',icon:LayoutDashboard},{id:'students',name:'Student records',icon:Users},{id:'sessions',name:'Attendance sessions',icon:QrCode},{id:'reports',name:'Reports & insights',icon:Activity},{id:'corrections',name:'Corrections',icon:FileCheck2},{id:'timetable',name:'Timetable',icon:CalendarDays}];
-const fmt=(date:string)=>new Date(date).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-const initials=(name:string)=>name.replace('Dr. ','').split(' ').map(n=>n[0]).slice(0,2).join('');
-export default function App(){
-  const [page,setPage]=useState('overview'),[courseId,setCourseId]=useState(courses[0].id),[snapshot,setSnapshot]=useState<Snapshot>(history),[query,setQuery]=useState(''),[batch,setBatch]=useState('all'),[risk,setRisk]=useState(false),[connected,setConnected]=useState(false),[error,setError]=useState(''),[toast,setToast]=useState('');
-  const [createOpen,setCreateOpen]=useState(false),[point,setPoint]=useState<Point|null>(null),[centre,setCentre]=useState<Point|null>(null),[busy,setBusy]=useState(false),[qr,setQr]=useState(''),[now,setNow]=useState(Date.now()),[detail,setDetail]=useState<string|null>(null);
-  const [correctStudent,setCorrectStudent]=useState(students[0].id),[correctSession,setCorrectSession]=useState(''),[reason,setReason]=useState(''),[present,setPresent]=useState(true),[audit,setAudit]=useState<{time:string;student:string;reason:string;present:boolean}[]>([]),[notice,setNotice]=useState(false);
-  const course=courses.find(c=>c.id===courseId)!;
-  const allRows=useMemo(()=>teacherRows(courseId,snapshot,students),[courseId,snapshot]);
-  const rows=allRows.filter(r=>(batch==='all'||r.student.batch===batch)&&(!risk||!r.eligible)&&`${r.student.name} ${r.student.id}`.toLowerCase().includes(query.toLowerCase()));
-  const sessions=snapshot.sessions.filter(s=>s.courseId===courseId).sort((a,b)=>Date.parse(b.date)-Date.parse(a.date));
-  const active=sessions.find(s=>s.status==='open');
-  const activeChecks=snapshot.checkIns.filter(c=>c.sessionId===active?.id);
-  const average=allRows.reduce((sum,r)=>sum+r.percentage,0)/allRows.length;
-  const shortage=allRows.filter(r=>!r.eligible).length;
-  async function refresh(){try{setSnapshot(await gateway.snapshot());setConnected(gateway.live);setError('');}catch(e){setConnected(false);setError((e as Error).message);}}
-  useEffect(()=>{let alive=true;const tick=async()=>{try{const data=await gateway.snapshot();if(alive){setSnapshot(data);setConnected(gateway.live);setError('');}}catch(e){if(alive){setConnected(false);setError((e as Error).message);}}};void tick();const timer=setInterval(tick,4000);return()=>{alive=false;clearInterval(timer);};},[]);
-  useEffect(()=>{if(!active){setQr('');return;}let alive=true;async function tick(){try{const payload=await gateway.qr(active!.id);if(alive)setQr(payload);}catch(e){if(alive){setQr('');setError((e as Error).message);}}}void tick();const t=setInterval(tick,1500);return()=>{alive=false;clearInterval(t);};},[active?.id]);
-  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),250);return()=>clearInterval(timer);},[]);
-  useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),4500);return()=>clearTimeout(t);},[toast]);
-  useEffect(()=>{setCorrectSession('');setDetail(null);},[courseId]);
-  async function run(fn:()=>Promise<void>){setBusy(true);try{await fn();await refresh();}catch(e){setToast((e as Error).message);}finally{setBusy(false);}}
-  const download=()=>{const blob=new Blob([exportCsv(rows)],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`OneAttend-${courseId}-${batch}.csv`;a.click();URL.revokeObjectURL(url);};
-  if(location.pathname==='/download')return <DownloadPage/>;
-  const studentDetail=allRows.find(r=>r.student.id===detail);
-  return <div className="workspace">
-    <aside className="sidebar"><a className="brand" href="/"><span className="brand-mark"><CheckCheck size={23}/></span>OneAttend<span className="brand-dot">.</span></a><div className="workspace-label">FACULTY WORKSPACE</div><div className="institution"><span className="institution-icon">N</span><div><strong>Northfield Institute</strong><small>Demonstration campus</small></div></div><nav>{nav.map(n=><button key={n.id} className={page===n.id?'nav active':'nav'} onClick={()=>{setPage(n.id);setQuery('');setRisk(false);}}><n.icon size={18}/>{n.name}{n.id==='corrections'&&<span className="nav-count">2</span>}</button>)}</nav><div className="sidebar-bottom"><div className="sidebar-note"><ShieldCheck size={19}/><strong>A clearer picture.<br/>Every class.</strong><p>One record. Less admin.<br/>More time to teach.</p></div><a href="/download" className="nav"><Smartphone size={18}/>Get the student app<ArrowUpRight size={14}/></a><button className="nav" onClick={()=>setNotice(true)}><CircleHelp size={18}/>Demo guide</button><div className="account"><span className="avatar">{initials(course.teacher)}</span><div><strong>{course.teacher.replace('Dr. ','')}</strong><small>{course.teacherId} · Demo faculty</small></div></div></div></aside>
-    <main className="main"><header className="topbar"><div className="breadcrumb">Workspace <span>/</span> {nav.find(n=>n.id===page)?.name}</div><div className="topbar-right"><span className={`connection ${connected?'online':''}`}><i/>{connected?'Live connected':gateway.live?'Connecting / offline':'Sample preview'}</span><button className="icon-button" aria-label="Notifications" onClick={()=>setNotice(true)}><Bell size={19}/><i className="notification-dot"/></button><span className="avatar small">{initials(course.teacher)}</span></div></header>
-      <div className="content">{error&&<div className="error-banner">Connection unavailable: {error}. Displaying the last available records.</div>}
-      <div className="page-heading"><div><div className="eyebrow">ACADEMIC YEAR 2026–27 · SEMESTER 1</div><h1>{page==='overview'?'Every class, accounted for.':nav.find(n=>n.id===page)?.name}</h1><p>{page==='overview'?`Welcome back, ${course.teacher.split(' ')[1]}. Here’s where your students stand.`:page==='students'?'A single, searchable record. No spreadsheet chasing.':page==='sessions'?'Start a session, verify check-ins, and let the record build itself.':page==='reports'?'Turn attendance records into timely, useful action.':page==='corrections'?'Review changes with context. Keep a traceable record.':'Your teaching week, organised.'}</p></div><button className="button primary" onClick={()=>{setCreateOpen(true);setPoint(null);}} disabled={!!active}><Plus size={17}/>{active?'Session in progress':'Start attendance'}</button></div>
-      <div className="course-toolbar"><div><span className="course-symbol" style={{background:`${course.color}18`,color:course.color}}>{course.short}</span><div><select aria-label="Demo faculty / course" value={courseId} onChange={e=>setCourseId(e.target.value)}>{courses.map(c=><option key={c.id} value={c.id}>{c.name} · {c.teacherId}</option>)}</select><small>{course.id} · Year 3, Semester 1 · AI + CS combined</small></div></div><span className="pill">75% eligibility threshold</span></div>
-      {(page==='overview'||page==='reports')&&<>
-      <div className="stats"><Stat label="Class attendance" value={`${average.toFixed(1)}%`} icon={<Activity size={18}/>} foot="Average across enrolled students"/><Stat label="Enrolled students" value="152" icon={<Users size={18}/>} foot="56 Artificial Intelligence · 96 Computer Science"/><Stat label="Classes conducted" value={String(sessions.filter(s=>s.status==='closed').length)} icon={<ClipboardCheck size={18}/>} foot="12 teaching weeks · August onwards"/><Stat label="Need attention" value={String(shortage)} icon={<ShieldCheck size={18}/>} foot="Students currently below 75%" warn/></div>
-      <div className="overview-grid"><section className="panel chart-panel"><PanelHead title="Attendance pulse" subtitle="Weekly participation · Combined AI + CS" right={<span className="legend"><i/>Class average</span>}/><Trend sessions={sessions} snapshot={snapshot}/><div className="chart-footer"><span>12 teaching weeks</span><span className="muted">Sample historical records + live demo sessions</span></div></section><section className="panel attention-panel"><PanelHead title="A little attention goes a long way" subtitle={`${shortage} students are below the required threshold`}/><div className="attention-list">{allRows.filter(r=>!r.eligible).slice(0,4).map(r=><button key={r.student.id} onClick={()=>setDetail(r.student.id)}><span className="avatar small">{initials(r.student.name)}</span><div><strong>{r.student.name}</strong><small>{r.student.id} · {r.needed} classes to recover</small></div><span className="percent amber">{r.percentage.toFixed(0)}%</span></button>)}</div><button className="text-button" onClick={()=>{setPage('students');setRisk(true);}}>View shortage list <ArrowRight size={15}/></button></section></div>
-      {page==='reports'&&<section className="panel report-actions"><div><h3>Ready for your end-semester review</h3><p>Filter by batch, inspect individual records, or export the complete course report.</p></div><button className="button" onClick={download}><Download size={16}/>Export CSV</button><button className="button" onClick={()=>window.print()}><ArrowDownToLine size={16}/>Print / save PDF</button><button className="button" onClick={()=>setNotice(true)}><Bell size={16}/>Preview reminders</button></section>}
-      </>}
-      {(page==='overview'||page==='sessions')&&<section className="panel session-panel"><PanelHead title={active?'Live classroom':'Recent attendance sessions'} subtitle={active?'Verified check-ins update automatically. Close the session to mark remaining students absent.':'Your course sessions, without manual compilation.'} right={active?<span className="pill live">● Session open</span>:<button className="text-button" onClick={()=>setPage('sessions')}>All sessions <ArrowRight size={15}/></button>}/>{active?<div className="live-layout"><div className="qr-box">{qr?<QRCodeSVG value={qr} size={188} bgColor="#ffffff" fgColor="#19202b" marginSize={2}/>:<span>Preparing secure QR…</span>}<small>Rotates every 3 seconds · {Math.max(1,3-Math.floor(now/1000)%3)}s</small></div><div className="live-details"><div className="live-number">{activeChecks.length}<span>/ 152 checked in</span></div><div className="progress"><i style={{width:`${activeChecks.length/152*100}%`}}/></div><p><MapPin size={16}/>50m geofence · {active.lat.toFixed(5)}, {active.lon.toFixed(5)}</p><p><ShieldCheck size={16}/>Expiring server-validated QR{!gateway.live?' · local preview only':''}</p><div className="button-row"><button className="button primary" disabled={busy} onClick={()=>void run(async()=>{await gateway.close(active.id);setToast('Session closed. Remaining students are marked absent.');})}><Check size={16}/>Close & finalise</button><button className="button subtle" disabled={busy} onClick={()=>{if(confirm('Cancel this session? It will not count toward attendance.'))void run(async()=>{await gateway.close(active.id,true);setToast('Session cancelled. Attendance totals are unchanged.');});}}>Cancel session</button></div></div><div className="checkin-feed"><div className="eyebrow">LATEST CHECK-INS</div>{activeChecks.slice(-5).reverse().map(c=><div key={c.studentId}><span className="tiny-check"><Check size={12}/></span><strong>{students.find(s=>s.id===c.studentId)?.name}</strong><small>{new Date(c.time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small></div>)}{!activeChecks.length&&<p>Ready for the first student.<br/>Scan from the Android app.</p>}</div></div>:<div className="table-scroll"><table><thead><tr><th>SESSION</th><th>COURSE</th><th>CHECKED IN</th><th>PARTICIPATION</th><th>STATUS</th></tr></thead><tbody>{sessions.slice(0,page==='sessions'?24:4).map(s=>{const count=snapshot.checkIns.filter(c=>c.sessionId===s.id).length;return <tr key={s.id}><td><span className="date-cell"><CalendarDays size={16}/>{fmt(s.date)}<small>{new Date(s.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small></span></td><td>{course.id}</td><td>{count}<span className="muted"> / 152 students</span></td><td><span className="mini-progress"><i style={{width:`${count/152*100}%`}}/></span>{(count/152*100).toFixed(0)}%</td><td><span className={`pill ${s.status==='cancelled'?'':'success'}`}>{s.status==='closed'?'Finalised':s.status}</span></td></tr>;})}</tbody></table></div>}</section>}
-      {(page==='students'||page==='reports')&&<section className="panel records"><PanelHead title="Student attendance records" subtitle={`${rows.length} students · ${course.name}`} right={<button className="button" onClick={download}><Download size={15}/>Export</button>}/><div className="filters"><label className="search"><Search size={17}/><input placeholder="Search name or roll number" value={query} onChange={e=>setQuery(e.target.value)}/></label><select aria-label="Batch" value={batch} onChange={e=>setBatch(e.target.value)}><option value="all">All batches</option><option value="AI">Artificial Intelligence</option><option value="CS">Computer Science</option></select><button className={`button ${risk?'selected':''}`} onClick={()=>setRisk(!risk)}>Below 75% {risk&&<Check size={14}/>}</button></div><div className="table-scroll"><table><thead><tr><th>STUDENT</th><th>BATCH</th><th>ATTENDED</th><th>ATTENDANCE</th><th>ELIGIBILITY</th><th>RECOVERY</th></tr></thead><tbody>{rows.map(r=><tr key={r.student.id} className="clickable" onClick={()=>setDetail(r.student.id)}><td><div className="student-cell"><span className="avatar small">{initials(r.student.name)}</span><div><strong>{r.student.name}</strong><small>{r.student.id}</small></div></div></td><td>{r.student.batch}</td><td>{r.attended} / {r.total}</td><td><span className="mini-progress"><i style={{width:`${r.percentage}%`,background:r.eligible?'var(--blue)':'var(--amber)'}}/></span>{r.percentage.toFixed(1)}%</td><td><span className={`pill ${r.eligible?'success':'warning'}`}>{r.eligible?'On track':'Below threshold'}</span></td><td>{r.needed?`${r.needed} consecutive classes`:'—'}</td></tr>)}</tbody></table>{!rows.length&&<div className="empty">No students match these filters.</div>}</div></section>}
-      {page==='corrections'&&<div className="corrections-grid"><section className="panel form-panel"><PanelHead title="Update a student’s record" subtitle="Changes apply to this course and require a reason."/><label>Student<select value={correctStudent} onChange={e=>setCorrectStudent(e.target.value)}>{students.map(s=><option key={s.id} value={s.id}>{s.id} · {s.name}</option>)}</select></label><label>Finalised session<select value={correctSession} onChange={e=>setCorrectSession(e.target.value)}><option value="">Select a session</option>{sessions.filter(s=>s.status==='closed').map(s=><option key={s.id} value={s.id}>{fmt(s.date)} · {s.id.startsWith('history')?'Historical sample':'Live demo'}</option>)}</select></label><label>Correct status<select value={present?'present':'absent'} onChange={e=>setPresent(e.target.value==='present')}><option value="present">Present</option><option value="absent">Absent</option></select></label><label>Reason<textarea placeholder="e.g. Student was present but the camera could not scan." value={reason} onChange={e=>setReason(e.target.value)}/></label><button className="button primary" disabled={busy||!correctSession||reason.trim().length<5} onClick={()=>void run(async()=>{await gateway.correct(correctSession,correctStudent,present,reason);setAudit(a=>[{time:new Date().toISOString(),student:correctStudent,reason,present},...a]);setReason('');setToast('Record updated. The correction reason has been recorded.');})}><Check size={16}/>Save correction</button></section><section className="panel"><PanelHead title="Review queue & change history" subtitle="Sample requests; manual changes are saved to the live demo backend."/><div className="request"><span className="pill warning">Sample request</span><h3>Unable to scan in class</h3><p>2401AI08 · Camera permission unavailable. Student requests review of the 12 October record.</p><button className="text-button" onClick={()=>{setCorrectStudent('2401AI08');setReason('Reviewed sample request: camera permission unavailable.');setToast('Choose the relevant session before saving.');}}>Review request <ArrowRight size={14}/></button></div><div className="request"><span className="pill warning">Sample request</span><h3>Medical leave documentation</h3><p>2401CS12 · Supporting document to be verified by the designated faculty member.</p><button className="text-button" onClick={()=>{setCorrectStudent('2401CS12');setReason('Medical leave request reviewed; institution policy must be verified.');}}>Review request <ArrowRight size={14}/></button></div>{audit.map((a,i)=><div className="request" key={i}><span className="pill success">{a.present?'Marked present':'Marked absent'}</span><h3>{a.student}</h3><p>{a.reason}</p><small>{new Date(a.time).toLocaleString('en-IN')}</small></div>)}</section></div>}
-      {page==='timetable'&&<section className="panel"><PanelHead title="Teaching timetable" subtitle="Sample combined-batch schedule · Choose a course to begin its session"/>{courses.map((c,i)=><div className="timetable-row" key={c.id}><div className="time-block"><strong>{['09:00','10:15','11:30','14:00','15:15','16:15'][i]}</strong><small>{i<3?'Mon / Wed':'Tue / Thu'}</small></div><span className="course-symbol" style={{color:c.color,background:`${c.color}16`}}>{c.short}</span><div><h3>{c.name}</h3><p>{c.id} · {c.room} · AI + CS</p></div><button className="button" onClick={()=>{setCourseId(c.id);setCreateOpen(true);setPoint(null);}}>Start session <ArrowRight size={14}/></button></div>)}</section>}
-      <footer className="footer"><span>OneAttend <span className="muted">/</span> Less administration. More education.</span><span>Fictitious campus & students · Presentation prototype</span></footer>
+const gateway = createGateway(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
+const nav = [
+  { id: 'overview', name: 'Overview', icon: LayoutDashboard },
+  { id: 'students', name: 'Student records', icon: Users },
+  { id: 'sessions', name: 'Attendance sessions', icon: QrCode },
+  { id: 'reports', name: 'Reports & insights', icon: Activity },
+  { id: 'corrections', name: 'Corrections', icon: FileCheck2 },
+  { id: 'timetable', name: 'Timetable', icon: CalendarDays },
+];
+const fmt = (date: string) =>
+  new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+const initials = (name: string) =>
+  name
+    .replace('Dr. ', '')
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('');
+export default function App() {
+  const [page, setPage] = useState('overview'),
+    [courseId, setCourseId] = useState(courses[0].id),
+    [snapshot, setSnapshot] = useState<Snapshot>(history),
+    [query, setQuery] = useState(''),
+    [batch, setBatch] = useState('all'),
+    [risk, setRisk] = useState(false),
+    [connected, setConnected] = useState(false),
+    [error, setError] = useState(''),
+    [toast, setToast] = useState('');
+  const [createOpen, setCreateOpen] = useState(false),
+    [point, setPoint] = useState<Point | null>(null),
+    [centre, setCentre] = useState<Point | null>(null),
+    [busy, setBusy] = useState(false),
+    [qr, setQr] = useState(''),
+    [now, setNow] = useState(Date.now()),
+    [detail, setDetail] = useState<string | null>(null);
+  const [correctStudent, setCorrectStudent] = useState(students[0].id),
+    [correctSession, setCorrectSession] = useState(''),
+    [reason, setReason] = useState(''),
+    [present, setPresent] = useState(true),
+    [notice, setNotice] = useState(false);
+  const course = courses.find((c) => c.id === courseId)!;
+  const audit=(snapshot.corrections??[]).filter(a=>snapshot.sessions.some(s=>s.id===a.sessionId&&s.courseId===courseId)).map(a=>({time:a.time,student:a.studentId,reason:a.reason,present:a.present}));
+  const allRows = useMemo(() => teacherRows(courseId, snapshot, students), [courseId, snapshot]);
+  const rows = allRows.filter(
+    (r) =>
+      (batch === 'all' || r.student.batch === batch) &&
+      (!risk || !r.eligible) &&
+      `${r.student.name} ${r.student.id}`.toLowerCase().includes(query.toLowerCase()),
+  );
+  const sessions = snapshot.sessions
+    .filter((s) => s.courseId === courseId)
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  const active = sessions.find((s) => s.status === 'open');
+  const activeChecks = snapshot.checkIns.filter((c) => c.sessionId === active?.id);
+  const average = allRows.reduce((sum, r) => sum + r.percentage, 0) / allRows.length;
+  const shortage = allRows.filter((r) => !r.eligible).length;
+  async function refresh() {
+    try {
+      setSnapshot(await gateway.snapshot({ courseId }));
+      setConnected(gateway.live);
+      setError('');
+    } catch (e) {
+      setConnected(false);
+      setError((e as Error).message);
+    }
+  }
+  useEffect(() => {
+    let alive = true;
+    setSnapshot(history);
+    const tick = async () => {
+      try {
+        const data = await gateway.snapshot({ courseId });
+        if (alive) {
+          setSnapshot(data);
+          setConnected(gateway.live);
+          setError('');
+        }
+      } catch (e) {
+        if (alive) {
+          setConnected(false);
+          setError((e as Error).message);
+        }
+      }
+    };
+    void tick();
+    const timer = setInterval(tick, 4000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [courseId]);
+  useEffect(() => {
+    if (!active) {
+      setQr('');
+      return;
+    }
+    let alive = true;
+    async function tick() {
+      try {
+        const payload = await gateway.qr(active!.id);
+        if (alive) setQr(payload);
+      } catch (e) {
+        if (alive) {
+          setQr('');
+          setError((e as Error).message);
+        }
+      }
+    }
+    void tick();
+    const t = setInterval(tick, 1500);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [active?.id]);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 4500);
+    return () => clearTimeout(t);
+  }, [toast]);
+  useEffect(() => {
+    setCorrectSession('');
+    setDetail(null);
+  }, [courseId]);
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    try {
+      await fn();
+      await refresh();
+    } catch (e) {
+      setToast((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const download = () => {
+    const blob = new Blob([exportCsv(rows)], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `OneAttend-${courseId}-${batch}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  if (location.pathname === '/download') return <DownloadPage />;
+  const studentDetail = allRows.find((r) => r.student.id === detail);
+  return (
+    <div className="workspace">
+      <aside className="sidebar">
+        <a className="brand" href="/">
+          <span className="brand-mark">
+            <CheckCheck size={23} />
+          </span>
+          OneAttend<span className="brand-dot">.</span>
+        </a>
+        <div className="workspace-label">FACULTY WORKSPACE</div>
+        <div className="institution">
+          <span className="institution-icon">N</span>
+          <div>
+            <strong>Northfield Institute</strong>
+            <small>Demonstration campus</small>
+          </div>
+        </div>
+        <nav>
+          {nav.map((n) => (
+            <button
+              key={n.id}
+              className={page === n.id ? 'nav active' : 'nav'}
+              onClick={() => {
+                setPage(n.id);
+                setQuery('');
+                setRisk(false);
+              }}
+            >
+              <n.icon size={18} />
+              {n.name}
+              {n.id === 'corrections' && <span className="nav-count">2</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="sidebar-note">
+            <ShieldCheck size={19} />
+            <strong>
+              A clearer picture.
+              <br />
+              Every class.
+            </strong>
+            <p>
+              One record. Less admin.
+              <br />
+              More time to teach.
+            </p>
+          </div>
+          <a href="/download" className="nav">
+            <Smartphone size={18} />
+            Get the student app
+            <ArrowUpRight size={14} />
+          </a>
+          <button className="nav" onClick={() => setNotice(true)}>
+            <CircleHelp size={18} />
+            Demo guide
+          </button>
+          <div className="account">
+            <span className="avatar">{initials(course.teacher)}</span>
+            <div>
+              <strong>{course.teacher.replace('Dr. ', '')}</strong>
+              <small>{course.teacherId} · Demo faculty</small>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main className="main">
+        <header className="topbar">
+          <div className="breadcrumb">
+            Workspace <span>/</span> {nav.find((n) => n.id === page)?.name}
+          </div>
+          <div className="topbar-right">
+            <span className={`connection ${connected ? 'online' : ''}`}>
+              <i />
+              {connected
+                ? 'Live connected'
+                : gateway.live
+                  ? 'Connecting / offline'
+                  : 'Sample preview'}
+            </span>
+            <button
+              className="icon-button"
+              aria-label="Notifications"
+              onClick={() => setNotice(true)}
+            >
+              <Bell size={19} />
+              <i className="notification-dot" />
+            </button>
+            <span className="avatar small">{initials(course.teacher)}</span>
+          </div>
+        </header>
+        <div className="content">
+          {error && (
+            <div className="error-banner">
+              Connection unavailable: {error}. Displaying the last available records.
+            </div>
+          )}
+          <div className="page-heading">
+            <div>
+              <div className="eyebrow">ACADEMIC YEAR 2026–27 · SEMESTER 1</div>
+              <h1>
+                {page === 'overview'
+                  ? 'Every class, accounted for.'
+                  : nav.find((n) => n.id === page)?.name}
+              </h1>
+              <p>
+                {page === 'overview'
+                  ? `Welcome back, ${course.teacher.split(' ')[1]}. Here’s where your students stand.`
+                  : page === 'students'
+                    ? 'A single, searchable record. No spreadsheet chasing.'
+                    : page === 'sessions'
+                      ? 'Start a session, verify check-ins, and let the record build itself.'
+                      : page === 'reports'
+                        ? 'Turn attendance records into timely, useful action.'
+                        : page === 'corrections'
+                          ? 'Review changes with context. Keep a traceable record.'
+                          : 'Your teaching week, organised.'}
+              </p>
+            </div>
+            <button
+              className="button primary"
+              onClick={() => {
+                setCreateOpen(true);
+                setPoint(null);
+              }}
+              disabled={!!active}
+            >
+              <Plus size={17} />
+              {active ? 'Session in progress' : 'Start attendance'}
+            </button>
+          </div>
+          <div className="course-toolbar">
+            <div>
+              <span
+                className="course-symbol"
+                style={{ background: `${course.color}18`, color: course.color }}
+              >
+                {course.short}
+              </span>
+              <div>
+                <select
+                  aria-label="Demo faculty / course"
+                  value={courseId}
+                  onChange={(e) => setCourseId(e.target.value)}
+                >
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} · {c.teacherId}
+                    </option>
+                  ))}
+                </select>
+                <small>{course.id} · Year 3, Semester 1 · AI + CS combined</small>
+              </div>
+            </div>
+            <span className="pill">75% eligibility threshold</span>
+          </div>
+          {(page === 'overview' || page === 'reports') && (
+            <>
+              <div className="stats">
+                <Stat
+                  label="Class attendance"
+                  value={`${average.toFixed(1)}%`}
+                  icon={<Activity size={18} />}
+                  foot="Average across enrolled students"
+                />
+                <Stat
+                  label="Enrolled students"
+                  value="152"
+                  icon={<Users size={18} />}
+                  foot="56 Artificial Intelligence · 96 Computer Science"
+                />
+                <Stat
+                  label="Classes conducted"
+                  value={String(sessions.filter((s) => s.status === 'closed').length)}
+                  icon={<ClipboardCheck size={18} />}
+                  foot="12 teaching weeks · August onwards"
+                />
+                <Stat
+                  label="Need attention"
+                  value={String(shortage)}
+                  icon={<ShieldCheck size={18} />}
+                  foot="Students currently below 75%"
+                  warn
+                />
+              </div>
+              <div className="overview-grid">
+                <section className="panel chart-panel">
+                  <PanelHead
+                    title="Attendance pulse"
+                    subtitle="Weekly participation · Combined AI + CS"
+                    right={
+                      <span className="legend">
+                        <i />
+                        Class average
+                      </span>
+                    }
+                  />
+                  <Trend sessions={sessions} snapshot={snapshot} />
+                  <div className="chart-footer">
+                    <span>12 teaching weeks</span>
+                    <span className="muted">Sample historical records + live demo sessions</span>
+                  </div>
+                </section>
+                <section className="panel attention-panel">
+                  <PanelHead
+                    title="A little attention goes a long way"
+                    subtitle={`${shortage} students are below the required threshold`}
+                  />
+                  <div className="attention-list">
+                    {allRows
+                      .filter((r) => !r.eligible)
+                      .slice(0, 4)
+                      .map((r) => (
+                        <button key={r.student.id} onClick={() => setDetail(r.student.id)}>
+                          <span className="avatar small">{initials(r.student.name)}</span>
+                          <div>
+                            <strong>{r.student.name}</strong>
+                            <small>
+                              {r.student.id} · {r.needed} classes to recover
+                            </small>
+                          </div>
+                          <span className="percent amber">{r.percentage.toFixed(0)}%</span>
+                        </button>
+                      ))}
+                  </div>
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setPage('students');
+                      setRisk(true);
+                    }}
+                  >
+                    View shortage list <ArrowRight size={15} />
+                  </button>
+                </section>
+              </div>
+              {page === 'reports' && (
+                <section className="panel report-actions">
+                  <div>
+                    <h3>Ready for your end-semester review</h3>
+                    <p>
+                      Filter by batch, inspect individual records, or export the complete course
+                      report.
+                    </p>
+                  </div>
+                  <button className="button" onClick={download}>
+                    <Download size={16} />
+                    Export CSV
+                  </button>
+                  <button className="button" onClick={() => window.print()}>
+                    <ArrowDownToLine size={16} />
+                    Print / save PDF
+                  </button>
+                  <button className="button" onClick={() => setNotice(true)}>
+                    <Bell size={16} />
+                    Preview reminders
+                  </button>
+                </section>
+              )}
+            </>
+          )}
+          {(page === 'overview' || page === 'sessions') && (
+            <section className="panel session-panel">
+              <PanelHead
+                title={active ? 'Live classroom' : 'Recent attendance sessions'}
+                subtitle={
+                  active
+                    ? 'Verified check-ins update automatically. Close the session to mark remaining students absent.'
+                    : 'Your course sessions, without manual compilation.'
+                }
+                right={
+                  active ? (
+                    <span className="pill live">● Session open</span>
+                  ) : (
+                    <button className="text-button" onClick={() => setPage('sessions')}>
+                      All sessions <ArrowRight size={15} />
+                    </button>
+                  )
+                }
+              />
+              {active ? (
+                <div className="live-layout">
+                  <div className="qr-box">
+                    {qr ? (
+                      <QRCodeSVG
+                        value={qr}
+                        size={188}
+                        bgColor="#ffffff"
+                        fgColor="#19202b"
+                        marginSize={2}
+                      />
+                    ) : (
+                      <span>Preparing secure QR…</span>
+                    )}
+                    <small>
+                      Rotates every 3 seconds · {Math.max(1, 3 - (Math.floor(now / 1000) % 3))}s
+                    </small>
+                  </div>
+                  <div className="live-details">
+                    <div className="live-number">
+                      {activeChecks.length}
+                      <span>/ 152 checked in</span>
+                    </div>
+                    <div className="progress">
+                      <i style={{ width: `${(activeChecks.length / 152) * 100}%` }} />
+                    </div>
+                    <p>
+                      <MapPin size={16} />
+                      50m geofence · {active.lat.toFixed(5)}, {active.lon.toFixed(5)}
+                    </p>
+                    <p>
+                      <ShieldCheck size={16} />
+                      Expiring server-validated QR{!gateway.live ? ' · local preview only' : ''}
+                    </p>
+                    <div className="button-row">
+                      <button
+                        className="button primary"
+                        disabled={busy}
+                        onClick={() =>
+                          void run(async () => {
+                            await gateway.close(active.id);
+                            setToast('Session closed. Remaining students are marked absent.');
+                          })
+                        }
+                      >
+                        <Check size={16} />
+                        Close & finalise
+                      </button>
+                      <button
+                        className="button subtle"
+                        disabled={busy}
+                        onClick={() => {
+                          if (confirm('Cancel this session? It will not count toward attendance.'))
+                            void run(async () => {
+                              await gateway.close(active.id, true);
+                              setToast('Session cancelled. Attendance totals are unchanged.');
+                            });
+                        }}
+                      >
+                        Cancel session
+                      </button>
+                    </div>
+                  </div>
+                  <div className="checkin-feed">
+                    <div className="eyebrow">LATEST CHECK-INS</div>
+                    {activeChecks
+                      .slice(-5)
+                      .reverse()
+                      .map((c) => (
+                        <div key={c.studentId}>
+                          <span className="tiny-check">
+                            <Check size={12} />
+                          </span>
+                          <strong>{students.find((s) => s.id === c.studentId)?.name}</strong>
+                          <small>
+                            {new Date(c.time).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </small>
+                        </div>
+                      ))}
+                    {!activeChecks.length && (
+                      <p>
+                        Ready for the first student.
+                        <br />
+                        Scan from the Android app.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>SESSION</th>
+                        <th>COURSE</th>
+                        <th>CHECKED IN</th>
+                        <th>PARTICIPATION</th>
+                        <th>STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sessions.slice(0, page === 'sessions' ? 24 : 4).map((s) => {
+                        const count = snapshot.checkIns.filter((c) => c.sessionId === s.id).length;
+                        return (
+                          <tr key={s.id}>
+                            <td>
+                              <span className="date-cell">
+                                <CalendarDays size={16} />
+                                {fmt(s.date)}
+                                <small>
+                                  {new Date(s.date).toLocaleTimeString('en-IN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </small>
+                              </span>
+                            </td>
+                            <td>{course.id}</td>
+                            <td>
+                              {count}
+                              <span className="muted"> / 152 students</span>
+                            </td>
+                            <td>
+                              <span className="mini-progress">
+                                <i style={{ width: `${(count / 152) * 100}%` }} />
+                              </span>
+                              {((count / 152) * 100).toFixed(0)}%
+                            </td>
+                            <td>
+                              <span className={`pill ${s.status === 'cancelled' ? '' : 'success'}`}>
+                                {s.status === 'closed' ? 'Finalised' : s.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+          {(page === 'students' || page === 'reports') && (
+            <section className="panel records">
+              <PanelHead
+                title="Student attendance records"
+                subtitle={`${rows.length} students · ${course.name}`}
+                right={
+                  <button className="button" onClick={download}>
+                    <Download size={15} />
+                    Export
+                  </button>
+                }
+              />
+              <div className="filters">
+                <label className="search">
+                  <Search size={17} />
+                  <input
+                    placeholder="Search name or roll number"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                  />
+                </label>
+                <select aria-label="Batch" value={batch} onChange={(e) => setBatch(e.target.value)}>
+                  <option value="all">All batches</option>
+                  <option value="AI">Artificial Intelligence</option>
+                  <option value="CS">Computer Science</option>
+                </select>
+                <button
+                  className={`button ${risk ? 'selected' : ''}`}
+                  onClick={() => setRisk(!risk)}
+                >
+                  Below 75% {risk && <Check size={14} />}
+                </button>
+              </div>
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>STUDENT</th>
+                      <th>BATCH</th>
+                      <th>ATTENDED</th>
+                      <th>ATTENDANCE</th>
+                      <th>ELIGIBILITY</th>
+                      <th>RECOVERY</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr
+                        key={r.student.id}
+                        className="clickable"
+                        onClick={() => setDetail(r.student.id)}
+                      >
+                        <td>
+                          <div className="student-cell">
+                            <span className="avatar small">{initials(r.student.name)}</span>
+                            <div>
+                              <strong>{r.student.name}</strong>
+                              <small>{r.student.id}</small>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{r.student.batch}</td>
+                        <td>
+                          {r.attended} / {r.total}
+                        </td>
+                        <td>
+                          <span className="mini-progress">
+                            <i
+                              style={{
+                                width: `${r.percentage}%`,
+                                background: r.eligible ? 'var(--blue)' : 'var(--amber)',
+                              }}
+                            />
+                          </span>
+                          {r.percentage.toFixed(1)}%
+                        </td>
+                        <td>
+                          <span className={`pill ${r.eligible ? 'success' : 'warning'}`}>
+                            {r.eligible ? 'On track' : 'Below threshold'}
+                          </span>
+                        </td>
+                        <td>{r.needed ? `${r.needed} consecutive classes` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!rows.length && <div className="empty">No students match these filters.</div>}
+              </div>
+            </section>
+          )}
+          {page === 'corrections' && (
+            <div className="corrections-grid">
+              <section className="panel form-panel">
+                <PanelHead
+                  title="Update a student’s record"
+                  subtitle="Changes apply to this course and require a reason."
+                />
+                <label>
+                  Student
+                  <select
+                    value={correctStudent}
+                    onChange={(e) => setCorrectStudent(e.target.value)}
+                  >
+                    {students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.id} · {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Finalised session
+                  <select
+                    value={correctSession}
+                    onChange={(e) => setCorrectSession(e.target.value)}
+                  >
+                    <option value="">Select a session</option>
+                    {sessions
+                      .filter((s) => s.status === 'closed')
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {fmt(s.date)} ·{' '}
+                          {s.id.startsWith('history') ? 'Historical sample' : 'Live demo'}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  Correct status
+                  <select
+                    value={present ? 'present' : 'absent'}
+                    onChange={(e) => setPresent(e.target.value === 'present')}
+                  >
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                  </select>
+                </label>
+                <label>
+                  Reason
+                  <textarea
+                    placeholder="e.g. Student was present but the camera could not scan."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                  />
+                </label>
+                <button
+                  className="button primary"
+                  disabled={busy || !correctSession || reason.trim().length < 5}
+                  onClick={() =>
+                    void run(async () => {
+                      await gateway.correct(correctSession, correctStudent, present, reason);
+                      setReason('');
+                      setToast('Record updated. The correction reason has been recorded.');
+                    })
+                  }
+                >
+                  <Check size={16} />
+                  Save correction
+                </button>
+              </section>
+              <section className="panel">
+                <PanelHead
+                  title="Review queue & change history"
+                  subtitle="Sample requests; manual changes are saved to the live demo backend."
+                />
+                <div className="request">
+                  <span className="pill warning">Sample request</span>
+                  <h3>Unable to scan in class</h3>
+                  <p>
+                    2401AI08 · Camera permission unavailable. Student requests review of the 12
+                    October record.
+                  </p>
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setCorrectStudent('2401AI08');
+                      setReason('Reviewed sample request: camera permission unavailable.');
+                      setToast('Choose the relevant session before saving.');
+                    }}
+                  >
+                    Review request <ArrowRight size={14} />
+                  </button>
+                </div>
+                <div className="request">
+                  <span className="pill warning">Sample request</span>
+                  <h3>Medical leave documentation</h3>
+                  <p>
+                    2401CS12 · Supporting document to be verified by the designated faculty member.
+                  </p>
+                  <button
+                    className="text-button"
+                    onClick={() => {
+                      setCorrectStudent('2401CS12');
+                      setReason(
+                        'Medical leave request reviewed; institution policy must be verified.',
+                      );
+                    }}
+                  >
+                    Review request <ArrowRight size={14} />
+                  </button>
+                </div>
+                {audit.map((a, i) => (
+                  <div className="request" key={i}>
+                    <span className="pill success">
+                      {a.present ? 'Marked present' : 'Marked absent'}
+                    </span>
+                    <h3>{a.student}</h3>
+                    <p>{a.reason}</p>
+                    <small>{new Date(a.time).toLocaleString('en-IN')}</small>
+                  </div>
+                ))}
+              </section>
+            </div>
+          )}
+          {page === 'timetable' && (
+            <section className="panel">
+              <PanelHead
+                title="Teaching timetable"
+                subtitle="Sample combined-batch schedule · Choose a course to begin its session"
+              />
+              {courses.map((c, i) => (
+                <div className="timetable-row" key={c.id}>
+                  <div className="time-block">
+                    <strong>{['09:00', '10:15', '11:30', '14:00', '15:15', '16:15'][i]}</strong>
+                    <small>{i < 3 ? 'Mon / Wed' : 'Tue / Thu'}</small>
+                  </div>
+                  <span
+                    className="course-symbol"
+                    style={{ color: c.color, background: `${c.color}16` }}
+                  >
+                    {c.short}
+                  </span>
+                  <div>
+                    <h3>{c.name}</h3>
+                    <p>
+                      {c.id} · {c.room} · AI + CS
+                    </p>
+                  </div>
+                  <button
+                    className="button"
+                    onClick={() => {
+                      setCourseId(c.id);
+                      setCreateOpen(true);
+                      setPoint(null);
+                    }}
+                  >
+                    Start session <ArrowRight size={14} />
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
+          <footer className="footer">
+            <span>
+              OneAttend <span className="muted">/</span> Less administration. More education.
+            </span>
+            <span>Fictitious campus & students · Presentation prototype</span>
+          </footer>
+        </div>
+      </main>
+      {toast && (
+        <div className="toast" role="status">
+          <CheckCheck size={18} />
+          {toast}
+          <button aria-label="Dismiss" onClick={() => setToast('')}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+      {createOpen && (
+        <Modal
+          title="Start a classroom session"
+          subtitle={`${course.id} · ${course.name} · 152 enrolled students`}
+          onClose={() => setCreateOpen(false)}
+          wide
+        >
+          <div className="map-toolbar">
+            <div>
+              <MapPin size={17} />
+              <strong>Select the classroom on the map</strong>
+              <small>The circle represents the 50m check-in boundary.</small>
+            </div>
+            <button
+              className="button"
+              onClick={() => {
+                if (!navigator.geolocation) {
+                  setToast('Geolocation is unavailable in this browser.');
+                  return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                  (p) => setCentre({ lat: p.coords.latitude, lon: p.coords.longitude }),
+                  (e) => setToast(e.message),
+                  { enableHighAccuracy: true, timeout: 15000 },
+                );
+              }}
+            >
+              <LocateFixed size={16} />
+              Find my area
+            </button>
+          </div>
+          <MapPicker point={point} onPick={setPoint} centre={centre} />
+          <div className="map-caption">
+            {point
+              ? `${point.lat.toFixed(6)}, ${point.lon.toFixed(6)} · 50m radius`
+              : 'Click the actual classroom location. No location has been selected.'}
+          </div>
+          <div className="info-box">
+            <ShieldCheck size={18} />
+            <div>
+              <strong>3-second QR rotation. Real GPS check-in.</strong>
+              <p>
+                Students must scan while the session is open. GPS accuracy varies indoors; test this
+                location before presenting.{' '}
+                {!gateway.live &&
+                  'Supabase is not connected: this session will remain device-local.'}
+              </p>
+            </div>
+          </div>
+          <div className="modal-actions">
+            <button className="button" onClick={() => setCreateOpen(false)}>
+              Cancel
+            </button>
+            <button
+              className="button primary"
+              disabled={!point || busy}
+              onClick={() =>
+                void run(async () => {
+                  await gateway.open(courseId, point!);
+                  setCreateOpen(false);
+                  setPage('sessions');
+                  setToast('Session opened. Display this QR for student check-in.');
+                })
+              }
+            >
+              <QrCode size={17} />
+              {busy ? 'Starting…' : 'Open attendance'}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {studentDetail && (
+        <Modal
+          title={studentDetail.student.name}
+          subtitle={`${studentDetail.student.id} · ${course.name}`}
+          onClose={() => setDetail(null)}
+        >
+          <div className="detail-stats">
+            <div>
+              <strong>{studentDetail.percentage.toFixed(1)}%</strong>
+              <small>Course attendance</small>
+            </div>
+            <div>
+              <strong>
+                {studentDetail.attended}/{studentDetail.total}
+              </strong>
+              <small>Classes attended</small>
+            </div>
+          </div>
+          <div className="info-box">
+            <ShieldCheck size={18} />
+            <p>
+              {studentDetail.eligible
+                ? `On track. Can miss up to ${studentDetail.canMiss} future classes while remaining at 75%.`
+                : `Needs ${studentDetail.needed} consecutive attended classes to reach 75%.`}
+            </p>
+          </div>
+          <h3 className="section-label">Recent class record</h3>
+          <div className="history-list">
+            {sessions
+              .filter((s) => s.status === 'closed')
+              .slice(0, 8)
+              .map((s) => (
+                <div key={s.id}>
+                  <span>{fmt(s.date)}</span>
+                  <span
+                    className={`pill ${snapshot.checkIns.some((c) => c.sessionId === s.id && c.studentId === detail) ? 'success' : 'warning'}`}
+                  >
+                    {snapshot.checkIns.some((c) => c.sessionId === s.id && c.studentId === detail)
+                      ? 'Present'
+                      : 'Absent'}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </Modal>
+      )}
+      {notice && (
+        <Modal
+          title="Your presentation workspace"
+          subtitle="A focused demo of OneAttend’s core workflow"
+          onClose={() => setNotice(false)}
+        >
+          <div className="guide">
+            <h3>1. Select a demo faculty account</h3>
+            <p>The course selector switches between six subject-specific teacher IDs.</p>
+            <h3>2. Start and verify a session</h3>
+            <p>
+              Pick the actual classroom on the map. Scan the rotating QR using the Android app and
+              close the session manually.
+            </p>
+            <h3>3. Show the student experience</h3>
+            <p>
+              Use code <code>student123</code> to unlock attendance analytics. Campus services are
+              interactive sample workflows.
+            </p>
+            <h3>Reminder preview · {shortage} recipients</h3>
+            <p>
+              “Your {course.id} attendance is below 75%. Check your recovery plan in OneAttend.”
+            </p>
+            <span className="pill">Preview only · no messages sent</span>
+            <p className="muted">
+              Demo identities are not authenticated. GPS reduces casual sharing but does not
+              guarantee proxy prevention. PDF export uses your browser’s Print → Save as PDF.
+            </p>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+function Stat({
+  label,
+  value,
+  icon,
+  foot,
+  warn = false,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  foot: string;
+  warn?: boolean;
+}) {
+  return (
+    <section className="stat">
+      <div>
+        <span>{label}</span>
+        <span className={warn ? 'stat-icon amber' : 'stat-icon'}>{icon}</span>
       </div>
-    </main>
-    {toast&&<div className="toast" role="status"><CheckCheck size={18}/>{toast}<button aria-label="Dismiss" onClick={()=>setToast('')}><X size={16}/></button></div>}
-    {createOpen&&<Modal title="Start a classroom session" subtitle={`${course.id} · ${course.name} · 152 enrolled students`} onClose={()=>setCreateOpen(false)} wide><div className="map-toolbar"><div><MapPin size={17}/><strong>Select the classroom on the map</strong><small>The circle represents the 50m check-in boundary.</small></div><button className="button" onClick={()=>{if(!navigator.geolocation){setToast('Geolocation is unavailable in this browser.');return;}navigator.geolocation.getCurrentPosition(p=>setCentre({lat:p.coords.latitude,lon:p.coords.longitude}),e=>setToast(e.message),{enableHighAccuracy:true,timeout:15000});}}><LocateFixed size={16}/>Find my area</button></div><MapPicker point={point} onPick={setPoint} centre={centre}/><div className="map-caption">{point?`${point.lat.toFixed(6)}, ${point.lon.toFixed(6)} · 50m radius`:'Click the actual classroom location. No location has been selected.'}</div><div className="info-box"><ShieldCheck size={18}/><div><strong>3-second QR rotation. Real GPS check-in.</strong><p>Students must scan while the session is open. GPS accuracy varies indoors; test this location before presenting. {!gateway.live&&'Supabase is not connected: this session will remain device-local.'}</p></div></div><div className="modal-actions"><button className="button" onClick={()=>setCreateOpen(false)}>Cancel</button><button className="button primary" disabled={!point||busy} onClick={()=>void run(async()=>{await gateway.open(courseId,point!);setCreateOpen(false);setPage('sessions');setToast('Session opened. Display this QR for student check-in.');})}><QrCode size={17}/>{busy?'Starting…':'Open attendance'}</button></div></Modal>}
-    {studentDetail&&<Modal title={studentDetail.student.name} subtitle={`${studentDetail.student.id} · ${course.name}`} onClose={()=>setDetail(null)}><div className="detail-stats"><div><strong>{studentDetail.percentage.toFixed(1)}%</strong><small>Course attendance</small></div><div><strong>{studentDetail.attended}/{studentDetail.total}</strong><small>Classes attended</small></div></div><div className="info-box"><ShieldCheck size={18}/><p>{studentDetail.eligible?`On track. Can miss up to ${studentDetail.canMiss} future classes while remaining at 75%.`:`Needs ${studentDetail.needed} consecutive attended classes to reach 75%.`}</p></div><h3 className="section-label">Recent class record</h3><div className="history-list">{sessions.filter(s=>s.status==='closed').slice(0,8).map(s=><div key={s.id}><span>{fmt(s.date)}</span><span className={`pill ${snapshot.checkIns.some(c=>c.sessionId===s.id&&c.studentId===detail)?'success':'warning'}`}>{snapshot.checkIns.some(c=>c.sessionId===s.id&&c.studentId===detail)?'Present':'Absent'}</span></div>)}</div></Modal>}
-    {notice&&<Modal title="Your presentation workspace" subtitle="A focused demo of OneAttend’s core workflow" onClose={()=>setNotice(false)}><div className="guide"><h3>1. Select a demo faculty account</h3><p>The course selector switches between six subject-specific teacher IDs.</p><h3>2. Start and verify a session</h3><p>Pick the actual classroom on the map. Scan the rotating QR using the Android app and close the session manually.</p><h3>3. Show the student experience</h3><p>Use code <code>student123</code> to unlock attendance analytics. Campus services are interactive sample workflows.</p><h3>Reminder preview · {shortage} recipients</h3><p>“Your {course.id} attendance is below 75%. Check your recovery plan in OneAttend.”</p><span className="pill">Preview only · no messages sent</span><p className="muted">Demo identities are not authenticated. GPS reduces casual sharing but does not guarantee proxy prevention. PDF export uses your browser’s Print → Save as PDF.</p></div></Modal>}
-  </div>;
+      <strong className={warn ? 'amber' : ''}>{value}</strong>
+      <small>{foot}</small>
+    </section>
+  );
 }
-function Stat({label,value,icon,foot,warn=false}:{label:string;value:string;icon:React.ReactNode;foot:string;warn?:boolean}){return <section className="stat"><div><span>{label}</span><span className={warn?'stat-icon amber':'stat-icon'}>{icon}</span></div><strong className={warn?'amber':''}>{value}</strong><small>{foot}</small></section>;}
-function PanelHead({title,subtitle,right}:{title:string;subtitle:string;right?:React.ReactNode}){return <div className="panel-head"><div><h2>{title}</h2><p>{subtitle}</p></div>{right}</div>;}
-function Trend({sessions,snapshot}:{sessions:Session[];snapshot:Snapshot}){
- const data=Array.from({length:12},(_,w)=>{const start=Date.UTC(2026,7,3+w*7);const ss=sessions.filter(s=>s.status==='closed'&&Date.parse(s.date)>=start&&Date.parse(s.date)<start+7*86400000);const ids=new Set(ss.map(s=>s.id));return ss.length?snapshot.checkIns.filter(c=>ids.has(c.sessionId)).length/(ss.length*152)*100:0;});
- return <div className="chart"><div className="chart-y"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div className="chart-plot"><div className="chart-lines"><i/><i/><i/><i/><i/></div><div className="threshold-line"><span>75% threshold</span></div><div className="bars">{data.map((value,i)=><div className="bar-col" key={i}><div className="bar" style={{height:`${value}%`}} title={`Week ${i+1}: ${value.toFixed(1)}%`}><span>{value.toFixed(0)}%</span></div><small>W{i+1}</small></div>)}</div></div></div>;
+function PanelHead({
+  title,
+  subtitle,
+  right,
+}: {
+  title: string;
+  subtitle: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="panel-head">
+      <div>
+        <h2>{title}</h2>
+        <p>{subtitle}</p>
+      </div>
+      {right}
+    </div>
+  );
 }
-function Modal({title,subtitle,children,onClose,wide=false}:{title:string;subtitle:string;children:React.ReactNode;onClose:()=>void;wide?:boolean}){useEffect(()=>{const handler=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose();};document.addEventListener('keydown',handler);const previous=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.removeEventListener('keydown',handler);document.body.style.overflow=previous;};},[onClose]);return <div className="modal-overlay" onClick={onClose}><section className={`modal ${wide?'wide':''}`} role="dialog" aria-modal="true" aria-label={title} onClick={e=>e.stopPropagation()}><div className="modal-head"><div><h2>{title}</h2><p>{subtitle}</p></div><button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20}/></button></div>{children}</section></div>;}
-function DownloadPage(){const apk=import.meta.env.VITE_APK_URL;const downloadPage=location.origin+'/download';return <div className="download-page"><a className="brand" href="/"><span className="brand-mark"><CheckCheck size={24}/></span>OneAttend.</a><div className="download-layout"><div><div className="eyebrow">YOUR CAMPUS. ONE APP.</div><h1>A clearer picture<br/>of every class.</h1><p>Check in. Know where you stand. Make campus life a little simpler.</p><div className="download-features"><span><ShieldCheck/>Geofenced attendance</span><span><Activity/>Course-by-course insights</span><span><CalendarDays/>Timetable & campus services</span></div>{apk?<a className="button primary" href={apk} target="_blank" rel="noreferrer"><Download size={18}/>Download Android APK</a>:<div className="info-box">The APK is not published yet. This page will show a download button once the verified build URL is configured.</div>}<p className="muted">Android 14+ · Internet required for live check-in<br/>Presentation prototype · Sample student identities</p><a className="text-button" href="/">Open faculty workspace <ArrowRight size={16}/></a></div><div className="download-card"><div className="qr-box"><QRCodeSVG value={downloadPage} size={210} marginSize={3}/></div><h2>Scan. Install. Explore.</h2><p>Scan this QR with your Android camera<br/>to open the download page.</p><ol><li>Download the APK.</li><li>Allow installation from your browser when Android asks.</li><li>Select a sample student to begin.</li></ol><span className="pill">Analytics demo code: student123</span><small>This QR opens the page, not an attendance session.<br/>Use a hosted HTTPS URL, not localhost, for phone access.</small></div></div></div>;}
+function Trend({ sessions, snapshot }: { sessions: Session[]; snapshot: Snapshot }) {
+  const data = Array.from({ length: 12 }, (_, w) => {
+    const start = Date.UTC(2026, 7, 3 + w * 7);
+    const ss = sessions.filter(
+      (s) =>
+        s.status === 'closed' &&
+        Date.parse(s.date) >= start &&
+        Date.parse(s.date) < start + 7 * 86400000,
+    );
+    const ids = new Set(ss.map((s) => s.id));
+    return ss.length
+      ? (snapshot.checkIns.filter((c) => ids.has(c.sessionId)).length / (ss.length * 152)) * 100
+      : 0;
+  });
+  return (
+    <div className="chart">
+      <div className="chart-y">
+        <span>100%</span>
+        <span>75%</span>
+        <span>50%</span>
+        <span>25%</span>
+        <span>0%</span>
+      </div>
+      <div className="chart-plot">
+        <div className="chart-lines">
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+        <div className="threshold-line">
+          <span>75% threshold</span>
+        </div>
+        <div className="bars">
+          {data.map((value, i) => (
+            <div className="bar-col" key={i}>
+              <div
+                className="bar"
+                style={{ height: `${value}%` }}
+                title={`Week ${i + 1}: ${value.toFixed(1)}%`}
+              >
+                <span>{value.toFixed(0)}%</span>
+              </div>
+              <small>W{i + 1}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+function Modal({
+  title,
+  subtitle,
+  children,
+  onClose,
+  wide = false,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  wide?: boolean;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = previous;
+    };
+  }, [onClose]);
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <section
+        className={`modal ${wide ? 'wide' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head">
+          <div>
+            <h2>{title}</h2>
+            <p>{subtitle}</p>
+          </div>
+          <button className="icon-button" aria-label="Close dialog" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}
+function DownloadPage() {
+  const apk = import.meta.env.VITE_APK_URL;
+  const downloadPage = location.origin + '/download';
+  return (
+    <div className="download-page">
+      <a className="brand" href="/">
+        <span className="brand-mark">
+          <CheckCheck size={24} />
+        </span>
+        OneAttend.
+      </a>
+      <div className="download-layout">
+        <div>
+          <div className="eyebrow">YOUR CAMPUS. ONE APP.</div>
+          <h1>
+            A clearer picture
+            <br />
+            of every class.
+          </h1>
+          <p>Check in. Know where you stand. Make campus life a little simpler.</p>
+          <div className="download-features">
+            <span>
+              <ShieldCheck />
+              Geofenced attendance
+            </span>
+            <span>
+              <Activity />
+              Course-by-course insights
+            </span>
+            <span>
+              <CalendarDays />
+              Timetable & campus services
+            </span>
+          </div>
+          {apk ? (
+            <a className="button primary" href={apk} target="_blank" rel="noreferrer">
+              <Download size={18} />
+              Download Android APK
+            </a>
+          ) : (
+            <div className="info-box">
+              The APK is not published yet. This page will show a download button once the verified
+              build URL is configured.
+            </div>
+          )}
+          <p className="muted">
+            Android 14+ · Internet required for live check-in
+            <br />
+            Presentation prototype · Sample student identities
+          </p>
+          <a className="text-button" href="/">
+            Open faculty workspace <ArrowRight size={16} />
+          </a>
+        </div>
+        <div className="download-card">
+          <div className="qr-box">
+            <QRCodeSVG value={downloadPage} size={210} marginSize={3} />
+          </div>
+          <h2>Scan. Install. Explore.</h2>
+          <p>
+            Scan this QR with your Android camera
+            <br />
+            to open the download page.
+          </p>
+          <ol>
+            <li>Download the APK.</li>
+            <li>Allow installation from your browser when Android asks.</li>
+            <li>Select a sample student to begin.</li>
+          </ol>
+          <span className="pill">Analytics demo code: student123</span>
+          <small>
+            This QR opens the page, not an attendance session.
+            <br />
+            Use a hosted HTTPS URL, not localhost, for phone access.
+          </small>
+        </div>
+      </div>
+    </div>
+  );
+}
