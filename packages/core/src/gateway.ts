@@ -10,18 +10,25 @@ export function createGateway(url?: string, key?: string) {
       : null;
   let local: Snapshot = { sessions: [...history.sessions], checkIns: [...history.checkIns] };
   async function rpc(name: string, args: Record<string, unknown> = {}) {
-    const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),12000);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
       const { data, error } = await client!.rpc(name, args).abortSignal(controller.signal);
       if (error) throw new Error(error.message);
       return data;
-    } finally {clearTimeout(timer);}
+    } finally {
+      clearTimeout(timer);
+    }
   }
   return {
     live: !!client,
     async snapshot(filter: { studentId?: string; courseId?: string } = {}): Promise<Snapshot> {
-      if (!client) return { sessions: [...local.sessions], checkIns: [...local.checkIns],corrections:[...(local.corrections??[])] };
+      if (!client)
+        return {
+          sessions: [...local.sessions],
+          checkIns: [...local.checkIns],
+          corrections: [...(local.corrections ?? [])],
+        };
       const data = await rpc('demo_snapshot', {
         p_student: filter.studentId ?? null,
         p_course: filter.courseId ?? null,
@@ -52,7 +59,14 @@ export function createGateway(url?: string, key?: string) {
       return { sessions, checkIns, corrections };
     },
     async open(courseId: string, point: Point): Promise<string> {
-      if(!courses.some(c=>c.id===courseId)||!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||Math.abs(point.lat)>90||Math.abs(point.lon)>180)throw new Error('Select a valid course and classroom location.');
+      if (
+        !courses.some((c) => c.id === courseId) ||
+        !Number.isFinite(point.lat) ||
+        !Number.isFinite(point.lon) ||
+        Math.abs(point.lat) > 90 ||
+        Math.abs(point.lon) > 180
+      )
+        throw new Error('Select a valid course and classroom location.');
       if (client)
         return rpc('demo_open_session', { p_course: courseId, p_lat: point.lat, p_lon: point.lon });
       if (local.sessions.some((s) => s.courseId === courseId && s.status === 'open'))
@@ -70,7 +84,8 @@ export function createGateway(url?: string, key?: string) {
     },
     async qr(sessionId: string): Promise<string> {
       if (client) return rpc('demo_qr', { p_session: sessionId });
-      if(!local.sessions.some(s=>s.id===sessionId&&s.status==='open'))throw new Error('This session is not open.');
+      if (!local.sessions.some((s) => s.id === sessionId && s.status === 'open'))
+        throw new Error('This session is not open.');
       return JSON.stringify({
         v: 1,
         session: sessionId,
@@ -81,14 +96,16 @@ export function createGateway(url?: string, key?: string) {
     async close(sessionId: string, cancel = false) {
       if (client) await rpc('demo_close_session', { p_session: sessionId, p_cancel: cancel });
       else {
-        if(!local.sessions.some(s=>s.id===sessionId&&s.status==='open'))throw new Error('This session has already been closed.');
+        if (!local.sessions.some((s) => s.id === sessionId && s.status === 'open'))
+          throw new Error('This session has already been closed.');
         local.sessions = local.sessions.map((s) =>
           s.id === sessionId ? { ...s, status: cancel ? 'cancelled' : 'closed' } : s,
         );
       }
     },
     async correct(sessionId: string, studentId: string, present: boolean, reason: string) {
-      if(!students.some(s=>s.id===studentId))throw new Error('Choose a valid demo student.');
+      if (!students.some((s) => s.id === studentId))
+        throw new Error('Choose a valid demo student.');
       if (reason.trim().length < 5) throw new Error('Add a reason of at least five characters.');
       if (client)
         await rpc('demo_correct', {
@@ -115,8 +132,9 @@ export function createGateway(url?: string, key?: string) {
       studentId: string,
       position: Position,
     ): Promise<{ already: boolean; distance: number }> {
-      if(!students.some(s=>s.id===studentId))throw new Error('Choose a valid demo student.');
-      if(payload.length>10000)throw new Error('QR payload is too large.');
+      if (!students.some((s) => s.id === studentId))
+        throw new Error('Choose a valid demo student.');
+      if (payload.length > 10000) throw new Error('QR payload is too large.');
       let qr: { v: number; session: string; slot: number; token: string };
       try {
         qr = JSON.parse(payload);
@@ -124,7 +142,8 @@ export function createGateway(url?: string, key?: string) {
         throw new Error('This is not a OneAttend attendance QR.');
       }
       if (
-        !qr || qr.v !== 1 ||
+        !qr ||
+        qr.v !== 1 ||
         typeof qr.session !== 'string' ||
         !Number.isInteger(qr.slot) ||
         typeof qr.token !== 'string'
@@ -139,7 +158,11 @@ export function createGateway(url?: string, key?: string) {
         position.accuracy < 0
       )
         throw new Error('Invalid GPS position.');
-      if (!Number.isFinite(position.timestamp) || Date.now() - position.timestamp > 20000 || position.timestamp > Date.now() + 5000)
+      if (
+        !Number.isFinite(position.timestamp) ||
+        Date.now() - position.timestamp > 20000 ||
+        position.timestamp > Date.now() + 5000
+      )
         throw new Error('Location is stale. Scan again for a fresh GPS reading.');
       if (position.accuracy > 100)
         throw new Error('GPS accuracy is too low. Move near a window or outdoors and retry.');
@@ -159,7 +182,7 @@ export function createGateway(url?: string, key?: string) {
       const slot = Math.floor(Date.now() / 3000);
       if (qr.slot !== slot && qr.slot !== slot - 1)
         throw new Error('QR expired. Scan the current code.');
-      if(qr.token!=='local-preview-only')throw new Error('Invalid local preview QR.');
+      if (qr.token !== 'local-preview-only') throw new Error('Invalid local preview QR.');
       const distance = haversine(position.lat, position.lon, session.lat, session.lon);
       if (distance > 50)
         throw new Error(

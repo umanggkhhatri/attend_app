@@ -1,0 +1,6 @@
+node_modules
+dist
+dist-web
+dist-android
+artifacts
+package-lock.json

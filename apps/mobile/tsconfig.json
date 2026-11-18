@@ -1,1 +1,10 @@
-{ "extends": "expo/tsconfig.base", "compilerOptions": { "strict": true, "skipLibCheck": true }, "include": ["**/*.ts", "**/*.tsx", "../../packages/core/src"] }
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["**/*.ts", "**/*.tsx", "../../packages/core/src"]
+}

@@ -169,7 +169,7 @@ export function createHistory(): Snapshot {
     for (let week = 0; week < 12; week++)
       for (let day = 0; day < 2; day++) {
         // Monday/Wednesday, Tuesday/Thursday or Wednesday/Friday; 09:00 IST onwards.
-        const date = new Date(Date.UTC(2026, 7, 3 + week * 7 + (c % 3) + day * 2, 3 + (c % 3),30));
+        const date = new Date(Date.UTC(2026, 7, 3 + week * 7 + (c % 3) + day * 2, 3 + (c % 3), 30));
         const id = `history-${course.id}-${week}-${day}`;
         sessions.push({
           id,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import {
   Activity,
   ArrowDownToLine,
@@ -8,16 +8,13 @@ import {
   CalendarDays,
   Check,
   CheckCheck,
-  ChevronDown,
   CircleHelp,
   ClipboardCheck,
-  Clock3,
   Download,
   FileCheck2,
   LayoutDashboard,
   LocateFixed,
   MapPin,
-  MoreHorizontal,
   Plus,
   QrCode,
   Search,
@@ -25,7 +22,6 @@ import {
   Smartphone,
   Users,
   X,
-  XCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
@@ -35,13 +31,11 @@ import {
   teacherRows,
   exportCsv,
   createGateway,
-  demoInstitution,
-  schedule,
   type Snapshot,
   type Point,
   type Session,
 } from '@oneattend/core';
-import MapPicker from './MapPicker';
+const MapPicker = lazy(() => import('./MapPicker'));
 const gateway = createGateway(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -86,7 +80,9 @@ export default function App() {
     [present, setPresent] = useState(true),
     [notice, setNotice] = useState(false);
   const course = courses.find((c) => c.id === courseId)!;
-  const audit=(snapshot.corrections??[]).filter(a=>snapshot.sessions.some(s=>s.id===a.sessionId&&s.courseId===courseId)).map(a=>({time:a.time,student:a.studentId,reason:a.reason,present:a.present}));
+  const audit = (snapshot.corrections ?? [])
+    .filter((a) => snapshot.sessions.some((s) => s.id === a.sessionId && s.courseId === courseId))
+    .map((a) => ({ time: a.time, student: a.studentId, reason: a.reason, present: a.present }));
   const allRows = useMemo(() => teacherRows(courseId, snapshot, students), [courseId, snapshot]);
   const rows = allRows.filter(
     (r) =>
@@ -920,7 +916,9 @@ export default function App() {
               Find my area
             </button>
           </div>
-          <MapPicker point={point} onPick={setPoint} centre={centre} />
+          <Suspense fallback={<div className="map empty">Loading classroom map…</div>}>
+            <MapPicker point={point} onPick={setPoint} centre={centre} />
+          </Suspense>
           <div className="map-caption">
             {point
               ? `${point.lat.toFixed(6)}, ${point.lon.toFixed(6)} · 50m radius`
