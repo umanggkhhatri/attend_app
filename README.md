@@ -27,6 +27,10 @@ This backend is **demo-only**: identities are selected, not authenticated, and a
 
 Only attendance check-in is free. Attendance visibility/analytics show a ₹9/month membership; `student123` is a visibly labelled demo unlock, not a payment integration.
 
+## Presentation website
+
+Open **http://localhost:5173/presentation** while `npm run web` is running. It includes a nine-slide full story, five-slide condensed mode, fullscreen controls, speaker notes, a screenshot gallery, editable team contributions and an interactive recovery example. See [docs/WEB_PRESENTATION.md](docs/WEB_PRESENTATION.md).
+
 ## Verify
 
 ```sh

@@ -1,0 +1,43 @@
+{
+  "source": "Uploaded survey.xlsx; 300 completed student responses",
+  "sample": {
+    "students": 300,
+    "iitPatna": 221,
+    "otherColleges": 79,
+    "sampling": "Exploratory convenience sample, not nationally representative"
+  },
+  "uncertainty": {
+    "question": "Towards the end of the semester, are you ever unsure if you have enough attendance to not fall short of the 75% criteria?",
+    "yes": 189,
+    "no": 111,
+    "denominator": 300,
+    "percentage": 63
+  },
+  "difficulty": {
+    "question": "How difficult is it for you to know your current attendance percentage across all 5–7 courses?",
+    "difficult": 105,
+    "veryDifficult": 60,
+    "neutral": 79,
+    "veryEasy": 56,
+    "denominator": 300,
+    "combinedPercentage": 55
+  },
+  "tracking": {
+    "question": "Do you currently keep a track of your attendance?",
+    "regularly": 78,
+    "sometimes": 76,
+    "rarely": 60,
+    "no": 86,
+    "denominator": 300,
+    "nonRegularPercentage": 74
+  },
+  "faculty": {
+    "responses": 6,
+    "basis": "Team-reported; no faculty dataset supplied"
+  },
+  "limits": [
+    "Survey responses are not customer acquisition.",
+    "Problem evidence is not payment validation.",
+    "152 demo student identities are fictional fixtures."
+  ]
+}

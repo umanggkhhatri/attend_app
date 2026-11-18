@@ -1,5 +1,10 @@
 {
   "buildCommand": "cd ../.. && npm run build:web",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/((?!assets/|fonts/|favicon.svg).*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!assets/|fonts/|presentation-media/|presentation-files/|favicon.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

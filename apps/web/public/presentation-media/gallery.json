@@ -1,0 +1,168 @@
+{
+  "capturedAt": "2026-11-18T18:49:28.081Z",
+  "source": "Authentic browser previews; fictional seeded student records",
+  "facultyRole": "Faculty dashboard, admin-style layout; not a separate institute-admin role",
+  "screenshots": [
+    {
+      "group": "faculty",
+      "file": "01-overview.png",
+      "caption": "Faculty overview; fictional fixture cohort and attendance data."
+    },
+    {
+      "group": "faculty",
+      "file": "02-student-records.png",
+      "caption": "Searchable course-wise student records."
+    },
+    {
+      "group": "faculty",
+      "file": "03-shortage-filter.png",
+      "caption": "Students below 75% with recovery requirements."
+    },
+    {
+      "group": "faculty",
+      "file": "04-individual-record.png",
+      "caption": "Individual course history and eligibility details."
+    },
+    {
+      "group": "faculty",
+      "file": "05-reports-insights.png",
+      "caption": "Faculty reports, weekly participation and export controls."
+    },
+    {
+      "group": "faculty",
+      "file": "06-correction-inbox.png",
+      "caption": "Attendance correction controls; sample request queue. No correction was submitted."
+    },
+    {
+      "group": "faculty",
+      "file": "07-teaching-timetable.png",
+      "caption": "Sample teaching timetable with session-start controls."
+    },
+    {
+      "group": "faculty",
+      "file": "08-classroom-map.png",
+      "caption": "Map-selected classroom example and 50m boundary; no session submitted from this form."
+    },
+    {
+      "group": "faculty",
+      "file": "09-live-attendance.png",
+      "caption": "Actual live-demo session UI. QR screenshot is static and expired; roster is fictional."
+    },
+    {
+      "group": "faculty",
+      "file": "10-demo-guide-reminders.png",
+      "caption": "Demo guide and reminder preview; no messages sent."
+    },
+    {
+      "group": "student",
+      "file": "01-membership-overview.png",
+      "caption": "Student attendance membership screen; proposed price, no payment."
+    },
+    {
+      "group": "student",
+      "file": "02-demo-unlock.png",
+      "caption": "Demo unlock form; not a real subscription purchase."
+    },
+    {
+      "group": "student",
+      "file": "03-course-attendance.png",
+      "caption": "Course-wise attendance insights using seeded fictional records."
+    },
+    {
+      "group": "student",
+      "file": "04-recovery-what-if.png",
+      "caption": "Recovery planner and what-if analysis."
+    },
+    {
+      "group": "student",
+      "file": "05-weekly-trends.png",
+      "caption": "Weekly trends and course comparisons."
+    },
+    {
+      "group": "student",
+      "file": "06-attendance-calendar.png",
+      "caption": "Attendance calendar with present, absent and cancelled records."
+    },
+    {
+      "group": "student",
+      "file": "07-home-dashboard.png",
+      "caption": "Live-connected student home with sample attendance and campus shortcuts."
+    },
+    {
+      "group": "student",
+      "file": "08-student-timetable.png",
+      "caption": "Sample student weekly timetable."
+    },
+    {
+      "group": "student",
+      "file": "09-campus-services.png",
+      "caption": "Campus-service directory; interactive sample workflows."
+    },
+    {
+      "group": "student",
+      "file": "10-cab-sharing.png",
+      "caption": "Cab sharing: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "11-gate-passes.png",
+      "caption": "Gate passes: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "12-hostel-complaints.png",
+      "caption": "Hostel complaints: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "19-hostel-complaint-form.png",
+      "caption": "Sample complaint form; no request submitted."
+    },
+    {
+      "group": "student",
+      "file": "13-lost-found.png",
+      "caption": "Lost & found: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "14-announcements.png",
+      "caption": "Announcements: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "15-academic-calendar.png",
+      "caption": "Academic calendar: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "16-leave-corrections.png",
+      "caption": "Leave & corrections: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "17-mess-feedback.png",
+      "caption": "Mess & feedback: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "18-campus-directory.png",
+      "caption": "Campus directory: sample campus workflow, not a live institutional service."
+    },
+    {
+      "group": "student",
+      "file": "20-student-profile.png",
+      "caption": "Fictional demo student profile and demo membership state."
+    },
+    {
+      "group": "student",
+      "file": "21-demo-student-selector.png",
+      "caption": "Searchable fictional demo identity selector, not real authenticated users."
+    },
+    {
+      "group": "student",
+      "file": "22-checkin-permission-screen.png",
+      "caption": "Browser camera/location permission state. Not evidence of a successful GPS check-in."
+    }
+  ],
+  "skipped": []
+}

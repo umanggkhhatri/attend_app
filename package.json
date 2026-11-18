@@ -15,6 +15,7 @@
     "test:ui": "playwright test",
     "test:backend": "tsx --test supabase/tests/*.test.ts",
     "assets": "tsx scripts/brand-assets.ts",
+    "presentation:assets": "node scripts/presentation-web-assets.mjs",
     "format": "prettier --write \"apps/**/*.{ts,tsx,json,css,html}\" \"packages/**/*.{ts,json}\" \"supabase/tests/*.ts\" \"tests/**/*.ts\" \"scripts/*.ts\" playwright.config.ts package.json README.md docs/*.md"
   },
   "overrides": {

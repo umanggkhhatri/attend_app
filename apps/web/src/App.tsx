@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Bell,
+  BookOpen,
   CalendarDays,
   Check,
   CheckCheck,
@@ -239,6 +240,11 @@ export default function App() {
               More time to teach.
             </p>
           </div>
+          <a href="/presentation" className="nav">
+            <BookOpen size={18} />
+            Venture presentation
+            <ArrowUpRight size={14} />
+          </a>
           <a href="/download" className="nav">
             <Smartphone size={18} />
             Get the student app
